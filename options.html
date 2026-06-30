@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAID - Download Organizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="toast" class="toast"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Clear All Filters?</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove all <strong id="filter-count-modal">0</strong> URL filter(s)?</p>
+                <p class="modal-warning">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn-danger">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Folder Modal -->
+    <div id="rename-folder-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rename Folder</h3>
+            </div>
+            <div class="modal-body">
+                <p>Rename folder "<strong id="old-folder-name"></strong>" and update all <strong
+                        id="folder-filter-count">0</strong> filter(s)?</p>
+                <div class="input-group">
+                    <label for="new-folder-name">New folder name:</label>
+                    <input type="text" id="new-folder-name" placeholder="Enter new folder name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="rename-modal-cancel" class="btn-secondary">Cancel</button>
+                <button id="rename-modal-confirm" class="btn-primary">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="icon-48.png" alt="Maid" class="logo">
+                    <div>
+                        <h1>Maid</h1>
+                        <p class="subtitle">Smart Download Organization</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <label class="theme-toggle" title="Toggle dark mode">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="toggle-slider">
+                            <span class="slider-circle">
+                                <svg class="sun-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                </svg>
+                                <svg class="moon-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                </svg>
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-stack">
+
+            <!-- URL Filters / Rules Engine Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        Rules Engine
+                    </h3>
+                    <div class="card-header-actions">
+                        <p class="card-description">Create custom rules to organize downloads by website</p>
+                        <button id="toggle-url-info" class="btn-info" title="Show help">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <circle cx="12" cy="17" r="0.5" fill="currentColor"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="url-info-box" id="url-info-box" style="display: none;">
+                        <div class="info-content">
+                            <strong>How URL matching works:</strong>
+                            <ul>
+                                <li><strong>Simple text matching</strong> — enter any part of the URL (e.g.,
+                                    <code>github.com</code>, <code>drive.google</code>)</li>
+                                <li><strong>No https:// needed</strong> — just the domain or path is enough</li>
+                                <li><strong>First match wins</strong> — if a URL matches multiple rules, the first one
+                                    (alphabetically) is used</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="add-filter-section">
+                        <div class="rules-input-row">
+                            <div class="url-input-wrapper">
+                                <input type="text" id="url-input" placeholder="Website URL (e.g., github.com)"
+                                    autocomplete="off">
+                                <div id="url-suggestions" class="url-suggestions"></div>
+                            </div>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="folder-input" placeholder="Folder (e.g., Work)"
+                                    autocomplete="off">
+                                <div id="folder-suggestions" class="folder-suggestions"></div>
+                            </div>
+                            <button id="add-filter-btn" class="btn-primary">Add Rule</button>
+                        </div>
+                    </div>
+
+                    <div class="filters-list-section">
+                        <div class="rules-toolbar">
+                            <!-- Left: count + folder filter -->
+                            <div class="toolbar-left">
+                                <span class="filter-count-badge">
+                                    <span id="filter-count">0</span> Rules
+                                </span>
+                                <div class="toolbar-select-group">
+                                    <select id="folder-filter-select" class="toolbar-select" title="Filter by folder">
+                                        <option value="">All Folders</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Right: search + sort + actions -->
+                            <div class="toolbar-right">
+                                <div class="toolbar-search">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="m21 21-4.35-4.35" />
+                                    </svg>
+                                    <input type="text" id="filter-search" placeholder="Search rules…"
+                                        autocomplete="off">
+                                    <button id="clear-search" class="toolbar-clear-search" style="display:none;"
+                                        title="Clear search">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5">
+                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="toolbar-select-group">
+                                    <select id="sort-select" class="toolbar-select" title="Sort rules">
+                                        <option value="date-added">Newest first</option>
+                                        <option value="date-added-old">Oldest first</option>
+                                        <option value="url-asc">URL A→Z</option>
+                                        <option value="url-desc">URL Z→A</option>
+                                        <option value="folder-asc">Folder A→Z</option>
+                                        <option value="folder-desc">Folder Z→A</option>
+                                    </select>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <button id="rename-folder-btn" class="btn-icon-subtle" style="display:none;"
+                                    title="Rename selected folder">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                </button>
+                                <button id="clear-all-btn" class="btn-icon-danger" title="Clear all rules">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="filters-container" class="filters-container"></div>
+                        <div id="pagination-controls" class="pagination-controls" style="display: none;">
+                            <button id="prev-page" class="page-btn" disabled>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                                Previous
+                            </button>
+                            <div id="page-numbers" class="page-numbers"></div>
+                            <button id="next-page" class="page-btn" disabled>
+                                Next
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                            <div class="per-page-selector">
+                                <label for="per-page-select">Show:</label>
+                                <select id="per-page-select">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="all">All</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Type Filters Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        File Type Filters
+                    </h3>
+                    <p class="card-description">Automatically sort common file types into dedicated folders</p>
+                </div>
+                <div class="card-body">
+                    <div class="file-type-grid">
+                        <div class="file-type-item">
+                            <div class="file-type-icon images">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-type-info"><strong>Images</strong><span>.jpg, .png, .gif, .webp</span>
+                            </div>
+                            <label class="toggle-switch"><input type="checkbox" id="filter-images"><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="file-type-item">
+                            <div class="file-type-icon documents">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-type-info"><strong>Documents</strong><span>.pdf, .docx, .txt, .xlsx</span>
+                            </div>
+                            <label class="toggle-switch"><input type="checkbox" id="filter-docs"><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="file-type-item">
+                            <div class="file-type-icon music">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="file-type-info"><strong>Music</strong><span>.mp3, .wav</span></div>
+                            <label class="toggle-switch"><input type="checkbox" id="filter-music"><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="file-type-item">
+                            <div class="file-type-icon archives">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                    <rect x="1" y="3" width="22" height="5"></rect>
+                                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="file-type-info"><strong>Archives</strong><span>.zip, .rar, .7z, .tar</span>
+                            </div>
+                            <label class="toggle-switch"><input type="checkbox" id="filter-archives"><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="file-type-item">
+                            <div class="file-type-icon torrents">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-type-info"><strong>Torrents</strong><span>.torrent</span></div>
+                            <label class="toggle-switch"><input type="checkbox" id="filter-torrents"><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Settings Management
+                    </h3>
+                    <p class="card-description">Backup and restore your filter configurations</p>
+                </div>
+                <div class="card-body">
+                    <div class="settings-actions" id="import-drop-zone">
+                        <button id="export-btn" class="btn-secondary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export Settings
+                        </button>
+                        <button id="import-btn" class="btn-secondary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Import Settings
+                        </button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                        <div class="drop-indicator" id="drop-indicator">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drop JSON file here</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Settings Section -->
+            <section class="card">
+                <div class="card-header expandable-header" id="advanced-settings-header">
+                    <div>
+                        <h3>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
+                            </svg>
+                            Advanced Settings
+                        </h3>
+                        <p class="card-description">Fine-tune extension behavior for power users</p>
+                    </div>
+                    <button class="expand-btn" id="advanced-toggle-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div class="card-body expandable-content" id="advanced-settings-content" style="display: none;">
+                    <div class="advanced-settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-header">
+                                <label for="min-download-threshold">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    URL Suggestion Threshold
+                                </label>
+                                <span class="setting-value" id="threshold-value">10</span>
+                            </div>
+                            <p class="setting-description">Minimum number of downloads from a URL to show it in
+                                suggestions</p>
+                            <div class="setting-control">
+                                <input type="range" id="min-download-threshold" min="1" max="50" value="10" step="1">
+                                <div class="range-labels"><span>1</span><span>50</span></div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-header">
+                                <label for="history-timeframe">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    Download History Timeframe
+                                </label>
+                                <span class="setting-value" id="timeframe-value">6 months</span>
+                            </div>
+                            <p class="setting-description">How far back to search in download history for URL
+                                suggestions</p>
+                            <div class="setting-control">
+                                <select id="history-timeframe" class="setting-select">
+                                    <option value="1">Last Month</option>
+                                    <option value="3">Last 3 Months</option>
+                                    <option value="6" selected>Last 6 Months</option>
+                                    <option value="12">Last Year</option>
+                                    <option value="24">Last 2 Years</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                            <p class="setting-note">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink:0;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                Longer timeframes may take more time to process
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Templates -->
+    <div id="templates" style="display: none;">
+        <!-- Filter Item Template -->
+        <template id="tpl-filter-item">
+            <div class="filter-item">
+                <div class="filter-item-content">
+                    <div class="filter-url editable" data-field="url" title="Click to edit">
+                        <img class="url-favicon" src="" alt="" onerror="this.style.display='none'">
+                        <span class="url-text"></span>
+                    </div>
+                    <div class="filter-arrow">→</div>
+                    <div class="filter-folder editable" data-field="folder" title="Click to edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                            </path>
+                        </svg>
+                        <span class="folder-text"></span>
+                    </div>
+                </div>
+                <button class="btn-delete" title="Delete filter">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </template>
+
+        <!-- Empty State Template -->
+        <template id="tpl-empty-state">
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z">
+                    </path>
+                </svg>
+                <p>No URL filters yet</p>
+                <span>Add your first filter above to get started</span>
+            </div>
+        </template>
+
+        <!-- No Results Template -->
+        <template id="tpl-no-results">
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <p>No filters found</p>
+                <span class="no-results-text"></span>
+            </div>
+        </template>
+
+        <!-- Folder Suggestion Template -->
+        <template id="tpl-folder-suggestion">
+            <div class="folder-suggestion-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="folder-name-text"></span>
+                <span class="folder-suggestion-count"></span>
+            </div>
+        </template>
+
+        <!-- URL Suggestion Template -->
+        <template id="tpl-url-suggestion">
+            <div class="url-suggestion-item">
+                <img class="suggestion-favicon" src="" onerror="this.style.display='none'">
+                <span class="suggestion-url-text"></span>
+                <span class="url-suggestion-count"></span>
+            </div>
+        </template>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>
